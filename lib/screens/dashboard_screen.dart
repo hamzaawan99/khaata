@@ -4,9 +4,10 @@ import 'package:fl_chart/fl_chart.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/settings_provider.dart';
 import '../constants/app_constants.dart';
-import '../widgets/transaction_list.dart';
 import '../widgets/add_transaction_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/transaction_history_screen.dart';
+import '../models/transaction.dart';
 import 'package:file_picker/file_picker.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -71,8 +72,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       _buildHeader(context, provider, c, settings),
                       _buildChartCard(context, provider, c),
-                      _buildTransactionCard(context, provider, c),
-                      const SizedBox(height: 96),
+                      _buildQuickActions(context, c),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 );
@@ -80,19 +81,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddTransaction(context),
-        backgroundColor: AppConstants.primaryColor,
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Add',
-          style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 15),
-        ),
       ),
     );
   }
@@ -418,69 +406,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ─── Transaction Card ──────────────────────────────────────────────────────
+  // ─── Quick Actions ─────────────────────────────────────────────────────────
 
-  Widget _buildTransactionCard(
-      BuildContext context, TransactionProvider provider, AppColors c) {
+  Widget _buildQuickActions(BuildContext context, AppColors c) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 4)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Row(
-                children: [
-                  Text('Transactions',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: c.text)),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppConstants.primaryColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${provider.currentMonthTransactions.length} items',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: AppConstants.primaryColor,
-                          fontWeight: FontWeight.w600),
+      child: Column(
+        children: [
+          // Two add buttons
+          Row(
+            children: [
+              Expanded(
+                child: _QuickAddButton(
+                  label: 'Expense',
+                  symbol: '−',
+                  color: AppConstants.expenseColor,
+                  darkColor: AppConstants.expenseDark,
+                  icon: Icons.arrow_downward_rounded,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddTransactionScreen(
+                          initialType: TransactionType.expense),
                     ),
                   ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _QuickAddButton(
+                  label: 'Income',
+                  symbol: '+',
+                  color: AppConstants.incomeColor,
+                  darkColor: AppConstants.incomeDark,
+                  icon: Icons.arrow_upward_rounded,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddTransactionScreen(
+                          initialType: TransactionType.income),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // History button
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const TransactionHistoryScreen()),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: c.divider),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history_rounded,
+                      color: AppConstants.primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'View Transaction History',
+                    style: TextStyle(
+                      color: AppConstants.primaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right_rounded,
+                      color: AppConstants.primaryColor, size: 18),
                 ],
               ),
             ),
-            TransactionList(
-                transactions: provider.currentMonthTransactions),
-            const SizedBox(height: 12),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   // ─── Dialogs ───────────────────────────────────────────────────────────────
-
-  void _showAddTransaction(BuildContext context) {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (_) => const AddTransactionScreen()));
-  }
 
   void _showExportDialog(BuildContext context) {
     showDialog(
@@ -672,6 +685,95 @@ class _SummaryPill extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _QuickAddButton extends StatelessWidget {
+  final String label;
+  final String symbol;
+  final Color color;
+  final Color darkColor;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _QuickAddButton({
+    required this.label,
+    required this.symbol,
+    required this.color,
+    required this.darkColor,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 90,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [color, darkColor],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Large background symbol
+            Positioned(
+              right: 12,
+              bottom: -4,
+              child: Text(
+                symbol,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  fontSize: 72,
+                  fontWeight: FontWeight.bold,
+                  height: 1,
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 18),
+                  ),
+                  Text(
+                    'Add $label',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -8,7 +8,11 @@ import '../providers/settings_provider.dart';
 import '../constants/app_constants.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  final TransactionType initialType;
+  const AddTransactionScreen({
+    super.key,
+    this.initialType = TransactionType.expense,
+  });
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -19,7 +23,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _descriptionController = TextEditingController();
   final _categoryScrollCtrl    = ScrollController();
 
-  TransactionType _selectedType          = TransactionType.expense;
+  late TransactionType _selectedType;
   String          _selectedCategory      = '';
   PaymentMethod   _selectedPaymentMethod = PaymentMethod.cash;
   DateTime        _selectedDate          = DateTime.now();
@@ -27,6 +31,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedType = widget.initialType;
     _updateDefaultCategory();
   }
 
