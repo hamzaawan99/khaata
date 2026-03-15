@@ -87,7 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 );
               },
-              itemCount: 24, // Show 24 months (2 years)
+              itemCount: _initialPage + 1, // Pages 0..initialPage; page initialPage = current month (no future months)
             ),
           );
         },
@@ -98,6 +98,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
+  }
+
+  bool _isCurrentMonth(TransactionProvider provider) {
+    final now = DateTime.now();
+    return provider.selectedDate.year == now.year &&
+        provider.selectedDate.month == now.month;
   }
 
   Widget _buildMonthSelector(TransactionProvider provider) {
@@ -118,8 +124,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           IconButton(
-            onPressed: () => provider.nextMonth(),
-            icon: const Icon(Icons.chevron_right),
+            onPressed: _isCurrentMonth(provider) ? null : () => provider.nextMonth(),
+            icon: Icon(
+              Icons.chevron_right,
+              color: _isCurrentMonth(provider) ? Colors.grey.shade300 : null,
+            ),
           ),
         ],
       ),
