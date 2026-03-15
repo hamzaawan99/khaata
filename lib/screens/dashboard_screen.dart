@@ -427,7 +427,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const AddTransactionScreen(
-                          initialType: TransactionType.expense),
+                          initialType: TransactionType.expense,
+                          showTypeToggle: false),
                     ),
                   ),
                 ),
@@ -444,7 +445,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const AddTransactionScreen(
-                          initialType: TransactionType.income),
+                          initialType: TransactionType.income,
+                          showTypeToggle: false),
                     ),
                   ),
                 ),

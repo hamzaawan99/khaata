@@ -9,9 +9,11 @@ import '../constants/app_constants.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final TransactionType initialType;
+  final bool showTypeToggle;
   const AddTransactionScreen({
     super.key,
     this.initialType = TransactionType.expense,
+    this.showTypeToggle = true,
   });
 
   @override
@@ -100,25 +102,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'New Transaction',
-                    style: TextStyle(
+                  Text(
+                    widget.showTypeToggle
+                        ? 'New Transaction'
+                        : 'Add ${_selectedType == TransactionType.expense ? 'Expense' : 'Income'}',
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
-                  TypeToggle(
-                    selected: _selectedType,
-                    activeColor: _typeColor,
-                    onChanged: (t) => setState(() {
-                      _selectedType = t;
-                      _updateDefaultCategory();
-                      _categoryScrollCtrl.animateTo(0,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOut);
-                    }),
-                  ),
+                  if (widget.showTypeToggle)
+                    TypeToggle(
+                      selected: _selectedType,
+                      activeColor: _typeColor,
+                      onChanged: (t) => setState(() {
+                        _selectedType = t;
+                        _updateDefaultCategory();
+                        _categoryScrollCtrl.animateTo(0,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOut);
+                      }),
+                    ),
                 ],
               ),
               // Amount
