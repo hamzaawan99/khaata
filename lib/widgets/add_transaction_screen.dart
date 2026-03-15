@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/settings_provider.dart';
 import '../constants/app_constants.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -14,14 +15,14 @@ class AddTransactionScreen extends StatefulWidget {
 }
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
-  final _amountController = TextEditingController();
+  final _amountController      = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _categoryScrollController = ScrollController();
+  final _categoryScrollCtrl    = ScrollController();
 
-  TransactionType _selectedType = TransactionType.expense;
-  String _selectedCategory = '';
-  PaymentMethod _selectedPaymentMethod = PaymentMethod.cash;
-  DateTime _selectedDate = DateTime.now();
+  TransactionType _selectedType          = TransactionType.expense;
+  String          _selectedCategory      = '';
+  PaymentMethod   _selectedPaymentMethod = PaymentMethod.cash;
+  DateTime        _selectedDate          = DateTime.now();
 
   @override
   void initState() {
@@ -33,7 +34,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
-    _categoryScrollController.dispose();
+    _categoryScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -54,13 +55,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).extension<AppColors>()!;
+    final c        = Theme.of(context).extension<AppColors>()!;
+    final settings = context.watch<SettingsProvider>();
     return Scaffold(
       backgroundColor: c.background,
       body: Column(
         children: [
-          _buildHeader(c),
-          _buildCategoryRow(c),
+          _buildHeader(c, settings),
+          _buildCategoryGrid(c),
           Expanded(child: _buildDetailsCard(c)),
         ],
       ),
@@ -68,9 +70,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // ── Gradient header: back + title + type toggle + amount input ──────────────
+  // ── Gradient header ─────────────────────────────────────────────────────────
 
-  Widget _buildHeader(AppColors c) {
+  Widget _buildHeader(AppColors c, SettingsProvider settings) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
@@ -107,22 +109,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     onChanged: (t) => setState(() {
                       _selectedType = t;
                       _updateDefaultCategory();
-                      // scroll category list to start
-                      _categoryScrollController.animateTo(0,
+                      _categoryScrollCtrl.animateTo(0,
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeOut);
                     }),
                   ),
                 ],
               ),
-              // Amount input
+              // Amount
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '\$',
+                    settings.currencySymbol,
                     style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 26,
@@ -166,9 +167,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // ── Horizontal category row ─────────────────────────────────────────────────
+  // ── 3-row horizontal category grid ──────────────────────────────────────────
 
-  Widget _buildCategoryRow(AppColors c) {
+  Widget _buildCategoryGrid(AppColors c) {
     final categories = _selectedType == TransactionType.expense
         ? AppConstants.expenseCategories
         : AppConstants.incomeCategories;
@@ -180,7 +181,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
             child: Text(
               'CATEGORY',
               style: TextStyle(
@@ -192,22 +193,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
           ),
           SizedBox(
-            height: 78,
-            child: ListView.builder(
-              controller: _categoryScrollController,
+            height: 220,
+            child: GridView.builder(
+              controller: _categoryScrollCtrl,
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 1.0,
+              ),
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories.keys.elementAt(index);
-                final icon = categories[category]!;
+                final icon     = categories[category]!;
                 final isSelected = _selectedCategory == category;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedCategory = category),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    width: 68,
-                    margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       color: isSelected ? _typeColor : c.background,
                       borderRadius: BorderRadius.circular(12),
@@ -219,11 +224,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          icon,
-                          color: isSelected ? Colors.white : c.textSecondary,
-                          size: 20,
-                        ),
+                        Icon(icon,
+                            color: isSelected ? Colors.white : c.textSecondary,
+                            size: 20),
                         const SizedBox(height: 4),
                         Text(
                           category,
@@ -251,7 +254,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // ── Details card: description + payment + date ──────────────────────────────
+  // ── Details card ─────────────────────────────────────────────────────────────
 
   Widget _buildDetailsCard(AppColors c) {
     return SingleChildScrollView(
@@ -276,10 +279,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 textCapitalization: TextCapitalization.sentences,
                 style: TextStyle(color: c.text, fontSize: 14),
                 decoration: InputDecoration(
-                  prefixIcon:
-                      Icon(Icons.edit_note_rounded, color: c.textSecondary),
+                  prefixIcon: Icon(Icons.edit_note_rounded,
+                      color: c.textSecondary),
                   hintText: 'Description (optional)',
-                  hintStyle: TextStyle(color: c.textSecondary, fontSize: 14),
+                  hintStyle:
+                      TextStyle(color: c.textSecondary, fontSize: 14),
                   border: InputBorder.none,
                   filled: false,
                 ),
@@ -287,8 +291,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             Divider(height: 1, color: c.divider, indent: 16, endIndent: 16),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   Icon(Icons.payments_rounded,
@@ -322,8 +325,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         color: c.textSecondary, size: 20),
                     const SizedBox(width: 12),
                     Text('Date',
-                        style:
-                            TextStyle(color: c.textSecondary, fontSize: 14)),
+                        style: TextStyle(
+                            color: c.textSecondary, fontSize: 14)),
                     const Spacer(),
                     Text(
                       DateFormat('MMM dd, yyyy').format(_selectedDate),
@@ -345,7 +348,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // ── Fixed bottom save button ────────────────────────────────────────────────
+  // ── Pinned save button ────────────────────────────────────────────────────
 
   Widget _buildBottomBar(AppColors c) {
     return Container(
@@ -396,8 +399,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
-        data: Theme.of(context)
-            .copyWith(colorScheme: ColorScheme.light(primary: _typeColor)),
+        data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(primary: _typeColor)),
         child: child!,
       ),
     );
@@ -425,7 +428,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 }
 
-// ─── Shared widgets ───────────────────────────────────────────────────────────
+// ─── Shared widgets (exported for EditTransactionScreen) ──────────────────────
 
 class TypeToggle extends StatelessWidget {
   final TransactionType selected;
@@ -494,8 +497,8 @@ class PaymentPills extends StatelessWidget {
   });
 
   static const _labels = {
-    PaymentMethod.cash: 'Cash',
-    PaymentMethod.debitCard: 'Debit',
+    PaymentMethod.cash:       'Cash',
+    PaymentMethod.debitCard:  'Debit',
     PaymentMethod.creditCard: 'Credit',
   };
 
@@ -520,8 +523,7 @@ class PaymentPills extends StatelessWidget {
               style: TextStyle(
                 color: isSelected ? Colors.white : c.textSecondary,
                 fontSize: 12,
-                fontWeight:
-                    isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),

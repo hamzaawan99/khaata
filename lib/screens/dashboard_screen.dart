@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/settings_provider.dart';
 import '../constants/app_constants.dart';
 import '../widgets/transaction_list.dart';
 import '../widgets/add_transaction_screen.dart';
+import '../screens/settings_screen.dart';
 import 'package:file_picker/file_picker.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -43,7 +45,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).extension<AppColors>()!;
+    final c        = Theme.of(context).extension<AppColors>()!;
+    final settings = context.watch<SettingsProvider>();
     return Scaffold(
       backgroundColor: c.background,
       body: Consumer<TransactionProvider>(
@@ -66,7 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
                     children: [
-                      _buildHeader(context, provider, c),
+                      _buildHeader(context, provider, c, settings),
                       _buildChartCard(context, provider, c),
                       _buildTransactionCard(context, provider, c),
                       const SizedBox(height: 96),
@@ -86,7 +89,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         label: const Text(
           'Add',
           style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15),
         ),
       ),
     );
@@ -94,8 +99,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ─── Header ────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(
-      BuildContext context, TransactionProvider provider, AppColors c) {
+  Widget _buildHeader(BuildContext context, TransactionProvider provider,
+      AppColors c, SettingsProvider settings) {
     final isNegative = provider.balance < 0;
     return Container(
       decoration: const BoxDecoration(
@@ -135,6 +140,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: Colors.white70, size: 22),
                     onPressed: () => _showExportDialog(context),
                     tooltip: 'Export CSV',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings_rounded,
+                        color: Colors.white70, size: 22),
+                    onPressed: () => showSettingsSheet(context),
+                    tooltip: 'Settings',
                   ),
                 ],
               ),
@@ -188,9 +199,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              provider.formattedBalance,
+              settings.format(provider.balance),
               style: TextStyle(
-                color: isNegative ? const Color(0xFFFC8181) : Colors.white,
+                color: isNegative
+                    ? const Color(0xFFFC8181)
+                    : Colors.white,
                 fontSize: 42,
                 fontWeight: FontWeight.bold,
                 letterSpacing: -1,
@@ -199,12 +212,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: 20),
 
-            // Income/Expense row
+            // Income/Expense summary row
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 14),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(18),
@@ -214,7 +227,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: _SummaryPill(
                         label: 'Income',
-                        amount: provider.formattedIncome,
+                        amount: settings.format(provider.totalIncome),
                         icon: Icons.arrow_upward_rounded,
                         color: const Color(0xFF68D391),
                       ),
@@ -226,7 +239,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: _SummaryPill(
                         label: 'Expenses',
-                        amount: provider.formattedExpenses,
+                        amount: settings.format(provider.totalExpenses),
                         icon: Icons.arrow_downward_rounded,
                         color: const Color(0xFFFC8181),
                       ),
@@ -268,10 +281,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: provider.expenseCategoryTotals.isEmpty
@@ -295,8 +307,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        Icon(Icons.pie_chart_outline_rounded,
-            size: 52, color: c.divider),
+        Icon(Icons.pie_chart_outline_rounded, size: 52, color: c.divider),
         const SizedBox(height: 12),
         Text('No expenses this month',
             style: TextStyle(color: c.textSecondary, fontSize: 14)),
@@ -306,18 +317,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildPieChart(TransactionProvider provider, AppColors c) {
-    final totals = provider.expenseCategoryTotals;
-    final keys = totals.keys.toList();
+    final settings = context.read<SettingsProvider>();
+    final totals   = provider.expenseCategoryTotals;
+    final keys     = totals.keys.toList();
     final sections = totals.entries.map((e) {
       final pct = e.value / provider.totalExpenses * 100;
-      final ci = keys.indexOf(e.key) % AppConstants.chartColors.length;
+      final ci  = keys.indexOf(e.key) % AppConstants.chartColors.length;
       return PieChartSectionData(
         value: e.value,
         title: pct >= 9 ? '${pct.toStringAsFixed(0)}%' : '',
         color: AppConstants.chartColors[ci],
         radius: 54,
         titleStyle: const TextStyle(
-            fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.white),
       );
     }).toList();
 
@@ -326,11 +340,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Row(
           children: [
-            Text(
-              'Expense Breakdown',
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.bold, color: c.text),
-            ),
+            Text('Expense Breakdown',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: c.text)),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -339,7 +353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                provider.formattedExpenses,
+                settings.format(provider.totalExpenses),
                 style: const TextStyle(
                     color: AppConstants.expenseColor,
                     fontWeight: FontWeight.bold,
@@ -371,11 +385,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildLegend(TransactionProvider provider, AppColors c) {
     final totals = provider.expenseCategoryTotals;
-    final keys = totals.keys.toList();
+    final keys   = totals.keys.toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: totals.entries.take(7).map((e) {
-        final ci = keys.indexOf(e.key) % AppConstants.chartColors.length;
+        final ci  = keys.indexOf(e.key) % AppConstants.chartColors.length;
         final pct = e.value / provider.totalExpenses * 100;
         return Padding(
           padding: const EdgeInsets.only(bottom: 7),
@@ -396,8 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     overflow: TextOverflow.ellipsis),
               ),
               Text('${pct.toStringAsFixed(0)}%',
-                  style:
-                      TextStyle(fontSize: 11, color: c.textSecondary)),
+                  style: TextStyle(fontSize: 11, color: c.textSecondary)),
             ],
           ),
         );
@@ -417,10 +430,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -430,13 +442,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               child: Row(
                 children: [
-                  Text(
-                    'Transactions',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: c.text),
-                  ),
+                  Text('Transactions',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: c.text)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -503,8 +513,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _exportCurrentMonth(BuildContext context) async {
     try {
-      final provider = context.read<TransactionProvider>();
-      final filePath = await provider.exportCurrentMonthToCsv();
+      final filePath =
+          await context.read<TransactionProvider>().exportCurrentMonthToCsv();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Exported: ${filePath.split('/').last}'),
@@ -521,8 +531,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _exportAllData(BuildContext context) async {
     try {
-      final provider = context.read<TransactionProvider>();
-      final filePath = await provider.exportAllTransactionsToCsv();
+      final filePath =
+          await context.read<TransactionProvider>().exportAllTransactionsToCsv();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Exported: ${filePath.split('/').last}'),
@@ -561,13 +571,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _importFromCsv(BuildContext context) async {
+    final provider = context.read<TransactionProvider>();
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
       );
       if (result != null && result.files.isNotEmpty) {
-        final provider = context.read<TransactionProvider>();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Importing\u2026 please wait.')));
@@ -609,16 +619,14 @@ class _NavArrowButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color:
-              enabled ? Colors.white.withOpacity(0.18) : Colors.transparent,
+          color: enabled
+              ? Colors.white.withOpacity(0.18)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color:
-              enabled ? Colors.white : Colors.white.withOpacity(0.25),
-          size: 24,
-        ),
+        child: Icon(icon,
+            color: enabled ? Colors.white : Colors.white.withOpacity(0.25),
+            size: 24),
       ),
     );
   }

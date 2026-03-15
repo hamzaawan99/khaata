@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/settings_provider.dart';
 import '../constants/app_constants.dart';
 import 'edit_transaction_screen.dart';
 
@@ -68,10 +69,10 @@ class _DateHeader extends StatelessWidget {
   const _DateHeader({required this.date});
 
   String _label() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final now       = DateTime.now();
+    final today     = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    final d = DateTime(date.year, date.month, date.day);
+    final d         = DateTime(date.year, date.month, date.day);
     if (d == today) return 'Today';
     if (d == yesterday) return 'Yesterday';
     return DateFormat('MMM d, yyyy').format(date);
@@ -101,15 +102,13 @@ class _TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).extension<AppColors>()!;
-    final isIncome = transaction.type == TransactionType.income;
-    final typeColor =
-        isIncome ? AppConstants.incomeColor : AppConstants.expenseColor;
+    final c         = Theme.of(context).extension<AppColors>()!;
+    final settings  = context.watch<SettingsProvider>();
+    final isIncome  = transaction.type == TransactionType.income;
+    final typeColor = isIncome ? AppConstants.incomeColor : AppConstants.expenseColor;
     final icon = isIncome
-        ? AppConstants.incomeCategories[transaction.category] ??
-            Icons.more_horiz
-        : AppConstants.expenseCategories[transaction.category] ??
-            Icons.more_horiz;
+        ? AppConstants.incomeCategories[transaction.category] ?? Icons.more_horiz
+        : AppConstants.expenseCategories[transaction.category] ?? Icons.more_horiz;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -148,9 +147,7 @@ class _TransactionTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: c.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border(
-                left: BorderSide(color: typeColor, width: 3.5),
-              ),
+              border: Border(left: BorderSide(color: typeColor, width: 3.5)),
               boxShadow: [
                 BoxShadow(
                     color: Colors.black.withOpacity(0.04),
@@ -159,8 +156,7 @@ class _TransactionTile extends StatelessWidget {
               ],
             ),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
                   Container(
@@ -177,22 +173,18 @@ class _TransactionTile extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          transaction.category,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: c.text),
-                        ),
+                        Text(transaction.category,
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: c.text)),
                         if (transaction.description.isNotEmpty) ...[
                           const SizedBox(height: 2),
-                          Text(
-                            transaction.description,
-                            style: TextStyle(
-                                fontSize: 12, color: c.textSecondary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          Text(transaction.description,
+                              style: TextStyle(
+                                  fontSize: 12, color: c.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
                         ],
                         const SizedBox(height: 4),
                         Row(
@@ -217,7 +209,7 @@ class _TransactionTile extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${isIncome ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
+                    '${isIncome ? '+' : '-'}${settings.format(transaction.amount)}',
                     style: TextStyle(
                         color: typeColor,
                         fontWeight: FontWeight.bold,
@@ -236,7 +228,8 @@ class _TransactionTile extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) => EditTransactionScreen(transaction: transaction)),
+          builder: (_) =>
+              EditTransactionScreen(transaction: transaction)),
     );
   }
 

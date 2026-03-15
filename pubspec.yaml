@@ -57,6 +57,9 @@ dependencies:
   
   # Permissions
   permission_handler: ^11.1.0
+
+  # Settings persistence
+  shared_preferences: ^2.3.1
   
   # File Picker
   file_picker: ^10.2.1
