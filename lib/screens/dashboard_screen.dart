@@ -16,12 +16,24 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  late final PageController _pageController;
+
+  // The 24-page range starts 12 months before now, so the current month is always at index 12.
+  static const int _initialPage = 12;
+
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _initialPage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TransactionProvider>().initialize();
     });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -54,10 +66,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return RefreshIndicator(
             onRefresh: () => provider.initialize(),
             child: PageView.builder(
+              controller: _pageController,
               onPageChanged: (index) {
-                // Calculate the month offset based on page index
+                // Calculate the month offset based on page index.
+                // Page 0 = 12 months ago, page 12 = current month, page 23 = 11 months ahead.
                 final currentDate = DateTime.now();
-                final targetDate = DateTime(currentDate.year, currentDate.month - 12 + index, 1);
+                final targetDate = DateTime(currentDate.year, currentDate.month - _initialPage + index, 1);
                 provider.setCurrentMonth(targetDate);
               },
               itemBuilder: (context, index) {
