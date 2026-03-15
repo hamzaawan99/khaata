@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
@@ -13,10 +14,10 @@ class AddTransactionScreen extends StatefulWidget {
 }
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+  final _categoryScrollController = ScrollController();
+
   TransactionType _selectedType = TransactionType.expense;
   String _selectedCategory = '';
   PaymentMethod _selectedPaymentMethod = PaymentMethod.cash;
@@ -25,7 +26,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    // Set default category based on type
     _updateDefaultCategory();
   }
 
@@ -33,53 +33,132 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _categoryScrollController.dispose();
     super.dispose();
   }
 
   void _updateDefaultCategory() {
-    if (_selectedType == TransactionType.expense) {
-      _selectedCategory = AppConstants.expenseCategories.keys.first;
-    } else {
-      _selectedCategory = AppConstants.incomeCategories.keys.first;
-    }
+    final cats = _selectedType == TransactionType.expense
+        ? AppConstants.expenseCategories
+        : AppConstants.incomeCategories;
+    _selectedCategory = cats.keys.first;
   }
+
+  Color get _typeColor => _selectedType == TransactionType.expense
+      ? AppConstants.expenseColor
+      : AppConstants.incomeColor;
+
+  Color get _typeDark => _selectedType == TransactionType.expense
+      ? AppConstants.expenseDark
+      : AppConstants.incomeDark;
 
   @override
   Widget build(BuildContext context) {
+    final c = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
-      backgroundColor: AppConstants.backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Add Transaction',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppConstants.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+      backgroundColor: c.background,
+      body: Column(
+        children: [
+          _buildHeader(c),
+          _buildCategoryRow(c),
+          Expanded(child: _buildDetailsCard(c)),
+        ],
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+      bottomNavigationBar: _buildBottomBar(c),
+    );
+  }
+
+  // ── Gradient header: back + title + type toggle + amount input ──────────────
+
+  Widget _buildHeader(AppColors c) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_typeColor, _typeDark],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 16, 20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildTypeSelector(),
-              const SizedBox(height: 24),
-              _buildAmountField(),
-              const SizedBox(height: 24),
-              _buildCategorySelector(),
-              const SizedBox(height: 24),
-              _buildDescriptionField(),
-              const SizedBox(height: 24),
-              _buildPaymentMethodSelector(),
-              const SizedBox(height: 24),
-              _buildDateSelector(),
-              const SizedBox(height: 32),
-              _buildSaveButton(),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_rounded,
+                        color: Colors.white, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Text(
+                    'New Transaction',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  TypeToggle(
+                    selected: _selectedType,
+                    activeColor: _typeColor,
+                    onChanged: (t) => setState(() {
+                      _selectedType = t;
+                      _updateDefaultCategory();
+                      // scroll category list to start
+                      _categoryScrollController.animateTo(0,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOut);
+                    }),
+                  ),
+                ],
+              ),
+              // Amount input
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '\$',
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 26,
+                        fontWeight: FontWeight.w300),
+                  ),
+                  SizedBox(
+                    width: 180,
+                    child: TextField(
+                      controller: _amountController,
+                      autofocus: true,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                      ],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: '0.00',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.35),
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        filled: false,
+                      ),
+                      cursorColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -87,91 +166,177 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildTypeSelector() {
+  // ── Horizontal category row ─────────────────────────────────────────────────
+
+  Widget _buildCategoryRow(AppColors c) {
+    final categories = _selectedType == TransactionType.expense
+        ? AppConstants.expenseCategories
+        : AppConstants.incomeCategories;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConstants.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: c.surface,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Transaction Type',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Poppins',
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(
+              'CATEGORY',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: c.textSecondary,
+                letterSpacing: 0.8,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTypeOption(
-                  TransactionType.expense,
-                  'Expense',
-                  AppConstants.expenseColor,
-                  Icons.remove_circle_outline,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTypeOption(
-                  TransactionType.income,
-                  'Income',
-                  AppConstants.incomeColor,
-                  Icons.add_circle_outline,
-                ),
-              ),
-            ],
+          SizedBox(
+            height: 78,
+            child: ListView.builder(
+              controller: _categoryScrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories.keys.elementAt(index);
+                final icon = categories[category]!;
+                final isSelected = _selectedCategory == category;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedCategory = category),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 68,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? _typeColor : c.background,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? _typeColor : c.divider,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          icon,
+                          color: isSelected ? Colors.white : c.textSecondary,
+                          size: 20,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          category,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: isSelected ? Colors.white : c.textSecondary,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
+          Divider(height: 1, color: c.divider),
         ],
       ),
     );
   }
 
-  Widget _buildTypeOption(TransactionType type, String label, Color color, IconData icon) {
-    final isSelected = _selectedType == type;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedType = type;
-          _updateDefaultCategory();
-        });
-      },
+  // ── Details card: description + payment + date ──────────────────────────────
+
+  Widget _buildDetailsCard(AppColors c) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(12),
+          color: c.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 4)),
+          ],
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? color : Colors.grey,
-              size: 32,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: TextField(
+                controller: _descriptionController,
+                textCapitalization: TextCapitalization.sentences,
+                style: TextStyle(color: c.text, fontSize: 14),
+                decoration: InputDecoration(
+                  prefixIcon:
+                      Icon(Icons.edit_note_rounded, color: c.textSecondary),
+                  hintText: 'Description (optional)',
+                  hintStyle: TextStyle(color: c.textSecondary, fontSize: 14),
+                  border: InputBorder.none,
+                  filled: false,
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? color : Colors.grey,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Poppins',
+            Divider(height: 1, color: c.divider, indent: 16, endIndent: 16),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.payments_rounded,
+                      color: c.textSecondary, size: 22),
+                  const SizedBox(width: 12),
+                  Text('Payment',
+                      style:
+                          TextStyle(color: c.textSecondary, fontSize: 14)),
+                  const Spacer(),
+                  PaymentPills(
+                    selected: _selectedPaymentMethod,
+                    activeColor: _typeColor,
+                    onChanged: (m) =>
+                        setState(() => _selectedPaymentMethod = m),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: c.divider, indent: 16, endIndent: 16),
+            InkWell(
+              onTap: _pickDate,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today_rounded,
+                        color: c.textSecondary, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Date',
+                        style:
+                            TextStyle(color: c.textSecondary, fontSize: 14)),
+                    const Spacer(),
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(_selectedDate),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: c.text,
+                          fontSize: 14),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right_rounded,
+                        color: c.textSecondary, size: 18),
+                  ],
+                ),
               ),
             ),
           ],
@@ -180,318 +345,188 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildAmountField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConstants.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Amount',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              prefixText: '\$',
-              border: OutlineInputBorder(),
-              hintText: '0.00',
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter an amount';
-              }
-              if (double.tryParse(value) == null) {
-                return 'Please enter a valid number';
-              }
-              if (double.parse(value) <= 0) {
-                return 'Amount must be greater than 0';
-              }
-              return null;
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // ── Fixed bottom save button ────────────────────────────────────────────────
 
-  Widget _buildCategorySelector() {
-    final categories = _selectedType == TransactionType.expense
-        ? AppConstants.expenseCategories
-        : AppConstants.incomeCategories;
-
+  Widget _buildBottomBar(AppColors c) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConstants.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Category',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Poppins',
+      color: c.background,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: 54,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [_typeColor, _typeDark]),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                    color: _typeColor.withOpacity(0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5)),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedCategory,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
-            items: categories.keys.map((category) {
-              return DropdownMenuItem(
-                value: category,
-                child: Row(
-                  children: [
-                    Icon(categories[category]),
-                    const SizedBox(width: 8),
-                    Text(category),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedCategory = value!;
-              });
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select a category';
-              }
-              return null;
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDescriptionField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConstants.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Description',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _descriptionController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Enter description...',
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a description';
-              }
-              return null;
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentMethodSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConstants.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Payment Method',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<PaymentMethod>(
-            value: _selectedPaymentMethod,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
-            items: PaymentMethod.values.map((method) {
-              return DropdownMenuItem(
-                value: method,
-                child: Row(
-                  children: [
-                    Icon(AppConstants.paymentMethodIcons[method]),
-                    const SizedBox(width: 8),
-                    Text(AppConstants.paymentMethodLabels[method]!),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedPaymentMethod = value!;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConstants.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Date',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: () async {
-              final date = await showDatePicker(
-                context: context,
-                initialDate: _selectedDate,
-                firstDate: DateTime(2020),
-                lastDate: DateTime.now().add(const Duration(days: 1)),
-              );
-              if (date != null) {
-                setState(() {
-                  _selectedDate = date;
-                });
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today),
-                  const SizedBox(width: 8),
-                  Text(
-                    DateFormat('MMM dd, yyyy').format(_selectedDate),
-                    style: const TextStyle(fontSize: 16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _save,
+                borderRadius: BorderRadius.circular(16),
+                child: const Center(
+                  child: Text(
+                    'Save Transaction',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.3),
                   ),
-                ],
+                ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) => Theme(
+        data: Theme.of(context)
+            .copyWith(colorScheme: ColorScheme.light(primary: _typeColor)),
+        child: child!,
+      ),
+    );
+    if (date != null) setState(() => _selectedDate = date);
+  }
+
+  void _save() {
+    final amount = double.tryParse(_amountController.text.trim());
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Please enter a valid amount'),
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+    context.read<TransactionProvider>().addTransaction(Transaction(
+          amount: amount,
+          category: _selectedCategory,
+          description: _descriptionController.text.trim(),
+          type: _selectedType,
+          paymentMethod: _selectedPaymentMethod,
+          date: _selectedDate,
+        ));
+    Navigator.pop(context);
+  }
+}
+
+// ─── Shared widgets ───────────────────────────────────────────────────────────
+
+class TypeToggle extends StatelessWidget {
+  final TransactionType selected;
+  final Color activeColor;
+  final ValueChanged<TransactionType> onChanged;
+
+  const TypeToggle({
+    super.key,
+    required this.selected,
+    required this.activeColor,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _pill(context, TransactionType.expense, 'Expense'),
+          _pill(context, TransactionType.income, 'Income'),
         ],
       ),
     );
   }
 
-  Widget _buildSaveButton() {
-    return ElevatedButton(
-      onPressed: _saveTransaction,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppConstants.primaryColor,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+  Widget _pill(BuildContext context, TransactionType type, String label) {
+    final isSelected = selected == type;
+    return GestureDetector(
+      onTap: () => onChanged(type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(19),
         ),
-      ),
-      child: const Text(
-        'Save Transaction',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Poppins',
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? activeColor : Colors.white.withOpacity(0.8),
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ),
     );
   }
+}
 
-  void _saveTransaction() {
-    if (_formKey.currentState!.validate()) {
-      final transaction = Transaction(
-        amount: double.parse(_amountController.text),
-        category: _selectedCategory,
-        description: _descriptionController.text,
-        type: _selectedType,
-        paymentMethod: _selectedPaymentMethod,
-        date: _selectedDate,
-      );
+class PaymentPills extends StatelessWidget {
+  final PaymentMethod selected;
+  final Color activeColor;
+  final ValueChanged<PaymentMethod> onChanged;
 
-      context.read<TransactionProvider>().addTransaction(transaction);
-      Navigator.pop(context);
-    }
+  const PaymentPills({
+    super.key,
+    required this.selected,
+    required this.activeColor,
+    required this.onChanged,
+  });
+
+  static const _labels = {
+    PaymentMethod.cash: 'Cash',
+    PaymentMethod.debitCard: 'Debit',
+    PaymentMethod.creditCard: 'Credit',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Theme.of(context).extension<AppColors>()!;
+    return Row(
+      children: PaymentMethod.values.map((method) {
+        final isSelected = selected == method;
+        return GestureDetector(
+          onTap: () => onChanged(method),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            margin: const EdgeInsets.only(left: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? activeColor : c.background,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              _labels[method]!,
+              style: TextStyle(
+                color: isSelected ? Colors.white : c.textSecondary,
+                fontSize: 12,
+                fontWeight:
+                    isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
-} 
+}

@@ -19,39 +19,69 @@ class KhaataApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Khaata',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          primaryColor: AppConstants.primaryColor,
-          scaffoldBackgroundColor: AppConstants.backgroundColor,
-  
-          appBarTheme: const AppBarTheme(
-            backgroundColor: AppConstants.primaryColor,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            centerTitle: true,
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstants.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppConstants.primaryColor),
-            ),
-          ),
-        ),
+        themeMode: ThemeMode.system,
+        theme: _buildTheme(Brightness.light),
+        darkTheme: _buildTheme(Brightness.dark),
         home: const DashboardScreen(),
         debugShowCheckedModeBanner: false,
       ),
     );
   }
+}
+
+ThemeData _buildTheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+  final cs = ColorScheme.fromSeed(
+    seedColor: AppConstants.primaryColor,
+    brightness: brightness,
+    primary: AppConstants.primaryColor,
+    secondary: AppConstants.incomeColor,
+    error: AppConstants.expenseColor,
+  );
+
+  return ThemeData(
+    colorScheme: cs,
+    brightness: brightness,
+    useMaterial3: true,
+    scaffoldBackgroundColor: isDark ? AppColors.dark.background : AppColors.light.background,
+    extensions: [isDark ? AppColors.dark : AppColors.light],
+    cardTheme: CardThemeData(
+      elevation: 0,
+      color: isDark ? AppColors.dark.surface : AppColors.light.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppConstants.primaryColor, width: 2),
+      ),
+      filled: true,
+      fillColor: isDark ? AppColors.dark.background : AppColors.light.background,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AppConstants.primaryColor,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: false,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppConstants.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: isDark ? AppColors.dark.surface : const Color(0xFF1A202C),
+      contentTextStyle: TextStyle(color: isDark ? AppColors.dark.text : Colors.white),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: isDark ? AppColors.dark.surface : AppColors.light.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+  );
 }
