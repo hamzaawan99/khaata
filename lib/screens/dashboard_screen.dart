@@ -313,7 +313,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final ci  = keys.indexOf(e.key) % AppConstants.chartColors.length;
       return PieChartSectionData(
         value: e.value,
-        title: pct >= 9 ? '${pct.toStringAsFixed(0)}%' : '',
+        title: '',
         color: AppConstants.chartColors[ci],
         radius: 54,
         titleStyle: const TextStyle(
@@ -363,7 +363,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 )),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 20),
             Expanded(child: _buildLegend(provider, c)),
           ],
         ),
