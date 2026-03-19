@@ -66,14 +66,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final settings = context.watch<SettingsProvider>();
     return Scaffold(
       backgroundColor: c.background,
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           _buildHeader(c, settings),
           _buildCategoryGrid(c),
           Expanded(child: _buildDetailsCard(c)),
+          _buildBottomBar(c),
         ],
       ),
-      bottomNavigationBar: _buildBottomBar(c),
     );
   }
 
@@ -144,6 +145,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     child: TextField(
                       controller: _amountController,
                       autofocus: true,
+                      onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       inputFormatters: [
@@ -286,6 +288,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: TextField(
                 controller: _descriptionController,
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 textCapitalization: TextCapitalization.sentences,
                 style: TextStyle(color: c.text, fontSize: 14),
                 decoration: InputDecoration(
@@ -361,12 +364,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ── Pinned save button ────────────────────────────────────────────────────
 
   Widget _buildBottomBar(AppColors c) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final safePad = MediaQuery.of(context).padding.bottom;
     return Container(
       color: c.background,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: AnimatedContainer(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, bottom > 0 ? bottom : (safePad > 0 ? safePad : 12)),
+      child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             height: 54,
             decoration: BoxDecoration(
@@ -397,8 +400,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 

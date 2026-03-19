@@ -21,7 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late final PageController _pageController;
   int _currentPageIndex = _initialPage;
 
-  static const int _initialPage = 12;
+  static const int _initialPage = 48;
 
   @override
   void initState() {

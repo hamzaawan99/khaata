@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/settings_provider.dart';
@@ -24,8 +25,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final settings = context.watch<SettingsProvider>();
     final provider = context.watch<TransactionProvider>();
 
-    final all = List<Transaction>.from(provider.transactions)
+    final all = List<Transaction>.from(provider.currentMonthTransactions)
       ..sort((a, b) => b.date.compareTo(a.date));
+
+    final monthLabel = DateFormat('MMMM yyyy').format(provider.selectedDate);
 
     final filtered = _filter == null
         ? all
@@ -71,6 +74,14 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                               fontSize: 18,
                               fontWeight: FontWeight.bold),
                         ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '· $monthLabel',
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.75),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400),
+                        ),
                       ],
                     ),
                   ),
@@ -89,7 +100,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         children: [
                           Expanded(
                             child: _StatPill(
-                              label: 'All Income',
+                              label: '$monthLabel Income',
                               value: settings.format(totalIncome),
                               color: AppConstants.incomeColor,
                               icon: Icons.arrow_upward_rounded,
@@ -101,7 +112,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                               color: Colors.white.withValues(alpha: 0.2)),
                           Expanded(
                             child: _StatPill(
-                              label: 'All Expenses',
+                              label: '$monthLabel Expenses',
                               value: settings.format(totalExpenses),
                               color: const Color(0xFFFC8181),
                               icon: Icons.arrow_downward_rounded,
@@ -222,10 +233,13 @@ class _StatPill extends StatelessWidget {
               child: Icon(icon, color: color, size: 13),
             ),
             const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontSize: 12)),
+            Flexible(
+              child: Text(label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 12)),
+            ),
           ],
         ),
         const SizedBox(height: 5),

@@ -25,8 +25,7 @@ class Transaction {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+    final map = <String, dynamic>{
       'amount': amount,
       'category': category,
       'description': description,
@@ -35,6 +34,8 @@ class Transaction {
       'date': DateFormat('yyyy-MM-dd').format(date),
       'icon': icon,
     };
+    if (id != 0) map['id'] = id;
+    return map;
   }
 
   factory Transaction.fromMap(Map<String, dynamic> map) {

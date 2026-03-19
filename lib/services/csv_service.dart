@@ -168,6 +168,25 @@ class CsvService {
       if (csvData.isNotEmpty) {
         print('Header row: ${csvData[0]}');
       }
+
+      // ── Detect date format from all rows ────────────────────────────────
+      // App export uses dd/MM/yyyy (zero-padded, day first)
+      // Monefy uses M/d/yyyy (no padding, month first)
+      // Scan: if any row's second component > 12 it must be a day → M/d/yyyy
+      //       if any row's first component > 12 it must be a day → dd/MM/yyyy
+      String dateFormat = 'M/d/yyyy'; // default (Monefy)
+      outer:
+      for (int i = 1; i < csvData.length; i++) {
+        if (csvData[i].isEmpty) continue;
+        final parts = csvData[i][0].toString().trim().split('/');
+        if (parts.length == 3) {
+          final a = int.tryParse(parts[0]) ?? 0;
+          final b = int.tryParse(parts[1]) ?? 0;
+          if (b > 12) { dateFormat = 'M/d/yyyy'; break outer; }  // day is second → Monefy
+          if (a > 12) { dateFormat = 'dd/MM/yyyy'; break outer; } // day is first → app
+        }
+      }
+      print('Detected date format: $dateFormat');
       
       List<Transaction> transactions = [];
       
@@ -177,9 +196,9 @@ class CsvService {
         
         if (row.length >= 8) {
           try {
-            // Parse date (DD/MM/YYYY format - app's export format)
+            // Parse date using detected format
             String dateStr = row[0].toString().trim();
-            DateTime date = DateFormat('dd/MM/yyyy').parse(dateStr);
+            DateTime date = DateFormat(dateFormat).parse(dateStr);
             
             // Parse account (payment method)
             String account = row[1].toString().trim();

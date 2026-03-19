@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android local properties (machine-specific SDK paths)
+android/local.properties
+
+# CocoaPods generated directories
+ios/Pods/
+macos/Pods/
+
+# Data import/export files
+*.csv
