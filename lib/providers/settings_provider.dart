@@ -1,3 +1,7 @@
+// Copyright (c) 2024-2026 Hamza Awan. All rights reserved.
+// Licensed under AGPL-3.0. See LICENSE for details.
+// Commercial use requires a separate license. See COMMERCIAL.md.
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
