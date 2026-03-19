@@ -179,7 +179,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 See [LICENSE](LICENSE) for the full license text and [COMMERCIAL.md](COMMERCIAL.md) for commercial licensing enquiries.
 
-> Built on [Khaata](https://github.com/hamzaawan7/khaata) — Copyright (c) 2024–2026 Hamza Awan
+> Built on [Khaata](https://github.com/hamzaawan99/khaata) — Copyright (c) 2024–2026 Hamza Awan
 
 ## Support
 
