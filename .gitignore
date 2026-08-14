@@ -53,3 +53,6 @@ macos/Pods/
 
 # Data import/export files
 *.csv
+
+key.properties
+upload-keystore.jks

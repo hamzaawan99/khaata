@@ -6,16 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/premium_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'constants/app_constants.dart';
+import 'services/ad_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const KhaataApp());
+  await AdService().initialize();
+  runApp(const PennywiseApp());
 }
 
-class KhaataApp extends StatelessWidget {
-  const KhaataApp({super.key});
+class PennywiseApp extends StatelessWidget {
+  const PennywiseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +26,11 @@ class KhaataApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => PremiumProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, _) => MaterialApp(
-          title: 'Khaata',
+          title: 'Pennywise',
           themeMode: settings.themeMode,
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),

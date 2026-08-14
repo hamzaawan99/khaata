@@ -7,16 +7,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:khaata/main.dart';
-import 'package:khaata/providers/transaction_provider.dart';
+import 'package:pennywise/main.dart';
+import 'package:pennywise/providers/transaction_provider.dart';
 
 void main() {
-  testWidgets('Khaata app smoke test', (WidgetTester tester) async {
+  testWidgets('Pennywise app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const KhaataApp());
+    await tester.pumpWidget(const PennywiseApp());
 
     // Verify that the app title is displayed
-    expect(find.text('Khaata'), findsOneWidget);
+    expect(find.text('Pennywise'), findsOneWidget);
 
     // Verify that the dashboard screen loads
     expect(find.byType(MaterialApp), findsOneWidget);

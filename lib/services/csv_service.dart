@@ -74,7 +74,7 @@ class CsvService {
 
     // Create filename with timestamp to avoid conflicts
     String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-    String fileName = 'khaata_${year}_${month.toString().padLeft(2, '0')}_$timestamp.csv';
+    String fileName = 'pennywise_${year}_${month.toString().padLeft(2, '0')}_$timestamp.csv';
     String filePath = '${directory.path}/$fileName';
 
     // Write file
@@ -147,7 +147,7 @@ class CsvService {
 
     // Create filename with timestamp to avoid conflicts
     String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-    String fileName = 'khaata_all_transactions_$timestamp.csv';
+    String fileName = 'pennywise_all_transactions_$timestamp.csv';
     String filePath = '${directory.path}/$fileName';
 
     // Write file

@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/premium_provider.dart';
 import '../constants/app_constants.dart';
 
 /// Call this to slide up the settings sheet.
@@ -13,8 +14,11 @@ void showSettingsSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => ChangeNotifierProvider.value(
-      value: context.read<SettingsProvider>(),
+    builder: (_) => MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: context.read<SettingsProvider>()),
+        ChangeNotifierProvider.value(value: context.read<PremiumProvider>()),
+      ],
       child: const _SettingsSheet(),
     ),
   );
@@ -178,6 +182,135 @@ class _SettingsSheet extends StatelessWidget {
                 ),
               );
             }).toList(),
+          ),
+
+          const SizedBox(height: 28),
+
+          // ── Premium ────────────────────────────────────────────────────────
+          _SectionLabel('PREMIUM', c),
+          const SizedBox(height: 10),
+          Consumer<PremiumProvider>(
+            builder: (context, premium, _) {
+              if (premium.isPremium) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppConstants.incomeColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppConstants.incomeColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppConstants.incomeColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.workspace_premium_rounded,
+                            color: AppConstants.incomeColor, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Premium Active',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: c.text)),
+                            const SizedBox(height: 2),
+                            Text('Ads removed — thank you!',
+                                style: TextStyle(
+                                    fontSize: 12, color: c.textSecondary)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.check_circle_rounded,
+                          color: AppConstants.incomeColor, size: 22),
+                    ],
+                  ),
+                );
+              }
+              return Column(
+                children: [
+                  GestureDetector(
+                    onTap: premium.isLoading ? null : () => premium.purchaseRemoveAds(),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppConstants.primaryColor, AppConstants.primaryDark],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppConstants.primaryColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.block_rounded,
+                                color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Remove Ads',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14)),
+                                const SizedBox(height: 2),
+                                Text('One-time purchase — enjoy ad-free forever',
+                                    style: TextStyle(
+                                        color: Colors.white.withOpacity(0.8),
+                                        fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          if (premium.isLoading)
+                            const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2),
+                            )
+                          else
+                            const Icon(Icons.chevron_right_rounded,
+                                color: Colors.white, size: 22),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: premium.isLoading ? null : () => premium.restorePurchases(),
+                    child: Text(
+                      'Restore Purchases',
+                      style: TextStyle(
+                        color: AppConstants.primaryColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

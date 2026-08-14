@@ -1,6 +1,6 @@
 # Commercial Licensing
 
-**Khaata** is open-source software licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
+**Pennywise** is open-source software licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
 
 Under the AGPL-3.0, you are free to use, modify, and distribute this software provided that:
 - Any modified or derived work is also released under AGPL-3.0
@@ -37,7 +37,7 @@ Please describe your intended use case and we can agree on appropriate terms.
 
 Regardless of the license type, all uses of this codebase — modified or unmodified — must include visible attribution:
 
-> Built on [Khaata](https://github.com/hamzaawan7/khaata) by Hamza Awan
+> Built on [Pennywise](https://github.com/hamzaawan99/pennywise) by Hamza Awan
 
 This must appear in at least one of: source code comments, README, or an in-app About/Credits section.
 

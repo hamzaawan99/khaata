@@ -1,4 +1,4 @@
-package com.example.khaata
+package com.sinfultill.pennywise
 
 import io.flutter.embedding.android.FlutterActivity
 

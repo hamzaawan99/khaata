@@ -1,4 +1,4 @@
-# Khaata - Personal Finance Tracker
+# Pennywise — Smart Personal Finance Tracker
 
 A comprehensive personal finance and budget tracking app built with Flutter for **Android and iOS**.
 
@@ -14,6 +14,7 @@ A comprehensive personal finance and budget tracking app built with Flutter for 
 - **CSV Export**: Export transaction data to CSV files for backup and analysis
 - **Dark Mode**: Full dark mode support
 - **Currency Settings**: Configurable currency symbol
+- **Ad-Free Upgrade**: One-time purchase to remove all ads
 
 ### Predefined Categories
 
@@ -35,7 +36,7 @@ A comprehensive personal finance and budget tracking app built with Flutter for 
 
 ### Design Patterns
 - **Provider Pattern**: State management using Provider package
-- **Singleton Pattern**: Database and CSV services
+- **Singleton Pattern**: Database, CSV, Ad, and Purchase services
 - **Repository Pattern**: Data access through service layer
 - **Clean Architecture**: Separation of concerns with models, services, providers, and UI
 
@@ -59,21 +60,25 @@ lib/
 │   └── transaction.dart                # Transaction data model
 ├── providers/
 │   ├── transaction_provider.dart       # Transaction state management
-│   └── settings_provider.dart         # App settings state (theme, currency)
+│   ├── settings_provider.dart          # App settings state (theme, currency)
+│   └── premium_provider.dart           # Premium (ad-free) state management
 ├── screens/
 │   ├── dashboard_screen.dart           # Main dashboard
 │   ├── transaction_history_screen.dart # Monthly transaction history
-│   └── settings_screen.dart           # App settings
+│   └── settings_screen.dart            # App settings
 ├── services/
 │   ├── database_service.dart           # SQLite operations
-│   └── csv_service.dart               # CSV import/export functionality
+│   ├── csv_service.dart                # CSV import/export functionality
+│   ├── ad_service.dart                 # Google AdMob integration
+│   └── purchase_service.dart           # In-app purchase (Remove Ads)
 ├── utils/
-│   └── helpers.dart                   # Utility functions
+│   └── helpers.dart                    # Utility functions
 ├── widgets/
 │   ├── add_transaction_screen.dart     # Add transaction form
 │   ├── edit_transaction_screen.dart    # Edit/delete transaction form
-│   └── transaction_list.dart          # Transaction list widget
-└── main.dart                          # App entry point
+│   ├── transaction_list.dart           # Transaction list widget
+│   └── ad_banner_widget.dart           # Banner ad widget
+└── main.dart                           # App entry point
 ```
 
 ## Getting Started
@@ -89,7 +94,7 @@ lib/
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd khaata
+cd pennywise
 ```
 
 2. Install dependencies:
@@ -131,23 +136,6 @@ flutter run
 2. Choose **Export Current Month** or **Export All Data**
 3. CSV file will be saved to device storage (Documents on iOS, Downloads on Android)
 
-## Future Features
-
-### Paid Features (Premium)
-1. **Custom Categories**: Add new categories and rename existing ones
-2. **Cloud Backup**: Connect to Google Drive, Dropbox for data backup
-3. **Data Restore**: Restore data when upgrading devices
-4. **Advanced Analytics**: Detailed financial insights and reports
-5. **Budget Planning**: Set monthly budgets and track progress
-
-### Additional Features
-- Multi-currency support
-- Recurring transactions
-- Bill reminders
-- Financial goals tracking
-- Investment portfolio tracking
-- Tax reporting tools
-
 ## Dependencies
 
 - **sqflite**: Local SQLite database
@@ -160,15 +148,12 @@ flutter run
 - **permission_handler**: Device permissions
 - **file_picker**: File selection for CSV import
 - **shared_preferences**: Persistent settings storage
+- **google_mobile_ads**: Google AdMob banner ads
+- **in_app_purchase**: One-time "Remove Ads" purchase
 
-## Contributing
+## Privacy Policy
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/your-feature`)
-3. Make your changes
-4. Submit a pull request
-
-> **Note:** By contributing, you agree that your contributions will be licensed under the same AGPL-3.0 license.
+See our [Privacy Policy](https://hamzaawan99.github.io/pennywise/privacy-policy/) for details on data handling.
 
 ## License
 
@@ -179,9 +164,8 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 See [LICENSE](LICENSE) for the full license text and [COMMERCIAL.md](COMMERCIAL.md) for commercial licensing enquiries.
 
-> Built on [Khaata](https://github.com/hamzaawan99/khaata) — Copyright (c) 2024–2026 Hamza Awan
+> Built on [Pennywise](https://github.com/hamzaawan99/pennywise) — Copyright (c) 2024–2026 Hamza Awan
 
 ## Support
 
 For support and questions, please open an issue in the repository.
-

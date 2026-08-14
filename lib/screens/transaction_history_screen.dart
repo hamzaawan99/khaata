@@ -10,6 +10,7 @@ import '../providers/settings_provider.dart';
 import '../constants/app_constants.dart';
 import '../models/transaction.dart';
 import '../widgets/transaction_list.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
@@ -201,7 +202,12 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   )
                 : SingleChildScrollView(
                     padding: const EdgeInsets.only(bottom: 24),
-                    child: TransactionList(transactions: filtered),
+                    child: Column(
+                      children: [
+                        TransactionList(transactions: filtered),
+                        if (filtered.length >= 3) const AdBannerWidget(),
+                      ],
+                    ),
                   ),
           ),
         ],

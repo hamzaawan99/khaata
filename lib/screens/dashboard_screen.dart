@@ -12,6 +12,7 @@ import '../widgets/add_transaction_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/transaction_history_screen.dart';
 import '../models/transaction.dart';
+import '../widgets/ad_banner_widget.dart';
 import 'package:file_picker/file_picker.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -77,6 +78,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _buildHeader(context, provider, c, settings),
                       _buildChartCard(context, provider, c),
                       _buildQuickActions(context, c),
+                      const SizedBox(height: 12),
+                      const AdBannerWidget(),
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -112,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Row(
                 children: [
                   const Text(
-                    'Khaata',
+                    'Pennywise',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 26,
@@ -572,7 +575,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Import Data'),
         content: const Text(
-            'Choose a CSV file exported by Khaata to import transactions.'),
+            'Choose a CSV file exported by Pennywise to import transactions.'),
         actions: [
           TextButton(
             onPressed: () {
